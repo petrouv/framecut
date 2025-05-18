@@ -47,11 +47,14 @@ class MetadataProcessor:
             r"\[iso\s*:\s*(?P<iso>\d+)].*?"
             r"\[shutter\s*:\s*(?P<shut>[^]]+)].*?"
             r"\[fnum\s*:\s*(?P<fnum>\d+)].*?"
-            r"\[ev\s*:\s*(?P<ev>-?\d+)].*?"
+            r"\[ev\s*:\s*(?P<ev>-?\d+\.\d+|\-?\d+)].*?"
+            r"(?:\[ct\s*:\s*\d+].*?)?"  # Optional ct field
+            r"(?:\[color_md\s*:\s*[^]]+].*?)?"  # Optional color_md field
             r"\[focal_len\s*:\s*(?P<flen>\d+)].*?"
+            r"(?:\[dzoom_ratio\s*:\s*\d+,\s*delta\s*:\s*\d+].*?)?"  # Optional dzoom_ratio field
             r"\[(?:latitude|lat)\s*:\s*(?P<lat>-?\d+\.\d+)].*?"
             r"\[(?:longitude|long)\s*:\s*(?P<lon>-?\d+\.\d+)].*?"
-            r"(?:abs_alt|altitude)\s*:\s*(?P<alt>-?\d+\.\d+)", 
+            r"(?:abs_alt|altitude)\s*:\s*(?P<abs_alt>-?\d+\.\d+)",  # Only capture absolute altitude
             re.IGNORECASE
         )
         time_re = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
@@ -109,12 +112,17 @@ class MetadataProcessor:
                 
             m = tele_re.search(tele_line)
             if not m:
-                logger.error("Telemetry line not recognized")
+                logger.error(f"Telemetry line not recognized: '{tele_line}'")
                 return None
                 
             # Parse matched groups
             g = m.groupdict()
             
+            # Handle altitude - prefer abs_alt over anything else
+            altitude = None
+            if 'abs_alt' in g and g['abs_alt']:
+                altitude = g['abs_alt']
+                
             # Format data
             telemetry = {
                 'iso': g['iso'],
@@ -126,8 +134,8 @@ class MetadataProcessor:
                 'latitude_ref': 'N' if decimal.Decimal(g['lat']) >= 0 else 'S',
                 'longitude': g['lon'],
                 'longitude_ref': 'E' if decimal.Decimal(g['lon']) >= 0 else 'W',
-                'altitude': g['alt'],
-                'altitude_ref': '0' if decimal.Decimal(g['alt']) >= 0 else '1',
+                'altitude': altitude,
+                'altitude_ref': '0' if altitude and decimal.Decimal(altitude) >= 0 else '1',
                 'datetime': date_line,
             }
             
