@@ -13,12 +13,26 @@ from typing import List, Dict, Any, Optional, Union, Tuple
 from framecut.exceptions import CommandExecutionError
 
 # Configure logging
+class EmojiFormatter(logging.Formatter):
+    """Custom formatter that adds emoji to log messages"""
+    
+    def format(self, record):
+        # Add emoji to message for different log levels
+        if record.levelno == logging.ERROR:
+            record.msg = f"❌ {record.msg}"
+        return super().format(record)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger('framecut')
+
+# Apply custom formatter to all handlers
+for handler in logger.handlers or logging.getLogger().handlers:
+    handler.setFormatter(EmojiFormatter('%(asctime)s - %(levelname)s - %(message)s', 
+                                        datefmt='%Y-%m-%d %H:%M:%S'))
 
 def parse_timestamp(timestamp: str) -> float:
     """

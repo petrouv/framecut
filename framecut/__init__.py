@@ -5,7 +5,7 @@ Framecut - High-quality video frame extraction tool with optimizations for DJI d
 A tool for extracting high-quality frames from video footage with metadata preservation.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "DJI Framecut"
 __license__ = "MIT"
 
